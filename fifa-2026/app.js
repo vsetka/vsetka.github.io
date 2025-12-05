@@ -1,7 +1,9 @@
 let groupsData = null;
 let matchesData = null;
+let translationsData = null;
 let selectedTeam = null;
 let selectedFinish = null;
+let currentLang = 'en';
 
 const countryFlags = {
   "Mexico": "🇲🇽",
@@ -49,16 +51,67 @@ const countryFlags = {
   "TBD": "🏳️"
 };
 
+// I18n helper function
+function t(key, params = {}) {
+  const translations = translationsData?.translations[currentLang] || translationsData?.translations['en'] || {};
+  let text = translations[key] || key;
+  
+  // Replace parameters like {team}, {group}, etc.
+  Object.entries(params).forEach(([k, v]) => {
+    text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+  });
+  
+  return text;
+}
+
+// Translate country name
+function translateCountry(englishName) {
+  const countries = translationsData?.translations[currentLang]?.countries || {};
+  return countries[englishName] || englishName;
+}
+
+// Update all elements with data-i18n attribute
+function updatePageTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+  
+  // Update HTML dir attribute for RTL languages
+  const langConfig = translationsData?.languages[currentLang];
+  document.documentElement.dir = langConfig?.rtl ? 'rtl' : 'ltr';
+  document.documentElement.lang = currentLang;
+  
+  // Update page title
+  document.title = `${t('appTitle')} - ${t('appSubtitle')}`;
+}
+
 async function init() {
   try {
-    const [groupsResponse, matchesResponse] = await Promise.all([
+    const [groupsResponse, matchesResponse, translationsResponse] = await Promise.all([
       fetch('data/groups.json'),
-      fetch('data/matches.json')
+      fetch('data/matches.json'),
+      fetch('data/translations.json')
     ]);
     
     groupsData = await groupsResponse.json();
     matchesData = await matchesResponse.json();
+    translationsData = await translationsResponse.json();
     
+    // Load saved language preference
+    const savedLang = localStorage.getItem('fifa2026-lang');
+    if (savedLang && translationsData.languages[savedLang]) {
+      currentLang = savedLang;
+    } else {
+      // Try to detect browser language
+      const browserLang = navigator.language.split('-')[0];
+      if (translationsData.languages[browserLang]) {
+        currentLang = browserLang;
+      }
+    }
+    
+    populateLanguageSelector();
+    updatePageTranslations();
     populateTeamSelector();
     setupEventListeners();
   } catch (error) {
@@ -66,20 +119,100 @@ async function init() {
   }
 }
 
+function populateLanguageSelector() {
+  const dropdown = document.getElementById('lang-dropdown');
+  const toggle = document.getElementById('lang-toggle');
+  const currentFlag = document.getElementById('current-lang-flag');
+  const currentCode = document.getElementById('current-lang-code');
+  
+  dropdown.innerHTML = '';
+  
+  Object.entries(translationsData.languages).forEach(([code, lang]) => {
+    const option = document.createElement('button');
+    option.className = `lang-option ${code === currentLang ? 'active' : ''}`;
+    option.dataset.lang = code;
+    option.innerHTML = `
+      <span class="lang-flag">${lang.flag}</span>
+      <span class="lang-native">${lang.native}</span>
+    `;
+    option.addEventListener('click', () => setLanguage(code));
+    dropdown.appendChild(option);
+  });
+  
+  // Update current language display
+  const currentLangConfig = translationsData.languages[currentLang];
+  currentFlag.textContent = currentLangConfig.flag;
+  currentCode.textContent = currentLang.toUpperCase();
+  
+  // Toggle dropdown
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('open');
+  });
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', () => {
+    dropdown.classList.remove('open');
+  });
+}
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('fifa2026-lang', lang);
+  
+  const currentFlag = document.getElementById('current-lang-flag');
+  const currentCode = document.getElementById('current-lang-code');
+  const dropdown = document.getElementById('lang-dropdown');
+  
+  const langConfig = translationsData.languages[lang];
+  currentFlag.textContent = langConfig.flag;
+  currentCode.textContent = lang.toUpperCase();
+  
+  // Update active state in dropdown
+  dropdown.querySelectorAll('.lang-option').forEach(opt => {
+    opt.classList.toggle('active', opt.dataset.lang === lang);
+  });
+  
+  dropdown.classList.remove('open');
+  
+  updatePageTranslations();
+  
+  // Preserve selected value and refresh team selector with translated names
+  const select = document.getElementById('team-select');
+  const selectedValue = select.value;
+  populateTeamSelector();
+  select.value = selectedValue;
+  
+  // Update team info display if a team is selected
+  if (selectedTeam) {
+    showTeamInfo(selectedTeam);
+  }
+  
+  // Re-render paths if a team is selected
+  if (selectedTeam && selectedFinish) {
+    calculateAndShowPaths();
+  }
+}
+
 function populateTeamSelector() {
   const select = document.getElementById('team-select');
   
+  // Clear existing options except the first one
+  while (select.options.length > 1) {
+    select.remove(1);
+  }
+  
   Object.entries(groupsData.groups).forEach(([groupLetter, groupData]) => {
     const optgroup = document.createElement('optgroup');
-    optgroup.label = `Group ${groupLetter}`;
+    optgroup.label = `${t('group')} ${groupLetter}`;
     
     groupData.teams
-      // .filter(team => team.name !== 'TBD')
       .sort((a, b) => a.position > b.position)
       .forEach(team => {
         const option = document.createElement('option');
         option.value = `${groupLetter}-${team.position}`;
-        option.textContent = `${countryFlags[team.name] || '🏳️'} ${team.name}`;
+        const translatedName = translateCountry(team.name);
+        option.textContent = `${countryFlags[team.name] || '🏳️'} ${translatedName}`;
         optgroup.appendChild(option);
       });
     
@@ -128,7 +261,7 @@ function showTeamInfo(team) {
   const teamPot = document.getElementById('team-pot');
   
   teamFlag.textContent = countryFlags[team.name] || '🏳️';
-  teamName.textContent = team.name;
+  teamName.textContent = translateCountry(team.name);
   teamGroup.textContent = team.group;
   teamPosition.textContent = `${team.position}`;
   teamPot.textContent = `${team.pot}`;
@@ -207,7 +340,7 @@ function getGroupStageMatches(group, position) {
 function findR32Matches(teamDesignation, finish) {
   const r32Matches = matchesData.rounds.roundOf32.matches;
   const matches = [];
-  const group = teamDesignation.slice(1); // e.g. "A" from "1A" or "3A"
+  const group = teamDesignation.slice(1);
   
   if (finish === 1 || finish === 2) {
     r32Matches.forEach(m => {
@@ -223,7 +356,7 @@ function findR32Matches(teamDesignation, finish) {
     r32Matches.forEach(m => {
       m.teams.forEach(teamStr => {
         if (teamStr.startsWith('3') && teamStr.length > 2) {
-          const possibleGroups = teamStr.slice(1).split(''); // e.g. "ABCDF" -> ["A","B","C","D","F"]
+          const possibleGroups = teamStr.slice(1).split('');
           if (possibleGroups.includes(group)) {
             matches.push({
               ...m,
@@ -251,7 +384,7 @@ function tracePath(r32Match, groupMatches) {
   };
   
   const matchId = r32Match.id;
-  const winnerRef = `W${matchId.slice(1)}`; // e.g., M73 -> W73
+  const winnerRef = `W${matchId.slice(1)}`;
   
   const r16Match = findMatchByWinner(matchesData.rounds.roundOf16.matches, winnerRef);
   if (r16Match) {
@@ -296,7 +429,7 @@ function displayPaths(data) {
   const container = document.getElementById('paths-container');
   const pathTeamName = document.getElementById('path-team-name');
   
-  pathTeamName.textContent = data.team.name;
+  pathTeamName.textContent = translateCountry(data.team.name);
   container.innerHTML = '';
   
   const groupHtml = createGroupMatchesSummary(data.groupMatches);
@@ -318,21 +451,23 @@ function displayPaths(data) {
 
 function createGroupMatchesSummary(matches) {
   const matchItems = matches.map(m => {
-    const team1 = getTeamName(m.teams[0]);
-    const team2 = getTeamName(m.teams[1]);
-    const flag1 = countryFlags[team1] || '🏳️';
-    const flag2 = countryFlags[team2] || '🏳️';
+    const team1English = getTeamName(m.teams[0]);
+    const team2English = getTeamName(m.teams[1]);
+    const team1 = translateCountry(team1English);
+    const team2 = translateCountry(team2English);
+    const flag1 = countryFlags[team1English] || '🏳️';
+    const flag2 = countryFlags[team2English] || '🏳️';
     
     const venueNames = m.venuesList.map(v => v.name);
     const venueDisplay = venueNames.length > 1 
-      ? venueNames.join(' or ') 
+      ? venueNames.join(` ${t('or')} `) 
       : venueNames[0];
     const venueClass = venueNames.length > 1 ? 'venue uncertain' : 'venue';
     
     return `
       <div class="group-match-item">
         <span class="match-id">${m.id}</span>
-        <span class="match-teams">${flag1} ${team1} vs ${flag2} ${team2}</span>
+        <span class="match-teams">${flag1} ${team1} ${t('vs')} ${flag2} ${team2}</span>
         <span class="${venueClass}">${venueDisplay}</span>
         <span class="date">${formatDate(m.date)}</span>
       </div>
@@ -341,7 +476,7 @@ function createGroupMatchesSummary(matches) {
   
   return `
     <div class="group-matches-summary">
-      <h4>Group Stage Matches (3 matches)</h4>
+      <h4>${t('groupStageMatches')} (3 ${t('matches')})</h4>
       <div class="group-match-list">
         ${matchItems}
       </div>
@@ -358,9 +493,8 @@ function createThirdPlaceNote(group, paths) {
   
   return `
     <div class="third-place-note">
-      <h4>⚠️ Third Place Qualification</h4>
-      <p>If ${selectedTeam.name} finishes 3rd in Group ${group} and qualifies as one of the 8 best third-placed teams, 
-      they could be assigned to one of these knockout slots:</p>
+      <h4>⚠️ ${t('thirdPlaceQualification')}</h4>
+      <p>${t('thirdPlaceNote', { team: translateCountry(selectedTeam.name), group: group })}</p>
       <div class="possible-slots">
         ${slots}
       </div>
@@ -371,31 +505,31 @@ function createThirdPlaceNote(group, paths) {
 function createPathCard(path, index, total, team) {
   const isThirdPlace = path.r32.matchType === 'possible';
   const pathTitle = isThirdPlace 
-    ? `Path ${index + 1}: via ${path.r32.slotId}` 
-    : `Knockout Path`;
+    ? t('pathVia', { num: index + 1, slot: path.r32.slotId })
+    : t('knockoutPath');
   
   const pathNote = total > 1 
-    ? `${index + 1} of ${total} possible routes` 
-    : 'Single possible route';
+    ? t('possibleRoutes', { current: index + 1, total: total })
+    : t('singleRoute');
   
   const matches = [];
   
-  matches.push(createMatchCard(path.r32, 'Round of 32', 'round-32', getOpponentInfo(path.r32, team)));
+  matches.push(createMatchCard(path.r32, t('roundOf32'), 'round-32', getOpponentInfo(path.r32, team)));
   
   if (path.r16) {
-    matches.push(createMatchCard(path.r16, 'Round of 16', 'round-16'));
+    matches.push(createMatchCard(path.r16, t('roundOf16'), 'round-16'));
   }
   
   if (path.quarter) {
-    matches.push(createMatchCard(path.quarter, 'Quarter-Final', 'quarter'));
+    matches.push(createMatchCard(path.quarter, t('quarterFinal'), 'quarter'));
   }
   
   if (path.semi) {
-    matches.push(createMatchCard(path.semi, 'Semi-Final', 'semi'));
+    matches.push(createMatchCard(path.semi, t('semiFinal'), 'semi'));
   }
   
   if (path.final) {
-    matches.push(createMatchCard(path.final, 'Final', 'final'));
+    matches.push(createMatchCard(path.final, t('final'), 'final'));
   }
   
   const matchesWithArrows = matches.map((m, i) => {
@@ -434,11 +568,9 @@ function getOpponentInfo(match, team) {
 }
 
 function getTeamName(teamCode) {
-  // First check the matches teams mapping
   if (matchesData.teams && matchesData.teams[teamCode]) {
     return matchesData.teams[teamCode].name;
   }
-  // Fallback to groups data
   const position = parseInt(teamCode[0]);
   const group = teamCode.slice(1);
   if (groupsData.groups[group]) {
@@ -451,17 +583,17 @@ function getTeamName(teamCode) {
 function translateTeamDesignation(designation) {
   if (designation.startsWith('3') && designation.length > 2) {
     const groups = designation.slice(1).split('');
-    return `3rd place from ${groups.join('/')}`;
+    return t('thirdPlaceFrom', { groups: groups.join('/') });
   }
   
   const position = parseInt(designation[0]);
   const group = designation.slice(1);
   
-  // Try to get actual team name from matches data
   const teamCode = `${position}${group}`;
   if (matchesData.teams && matchesData.teams[teamCode]) {
-    const teamName = matchesData.teams[teamCode].name;
-    const flag = countryFlags[teamName] || '🏳️';
+    const teamNameEnglish = matchesData.teams[teamCode].name;
+    const teamName = translateCountry(teamNameEnglish);
+    const flag = countryFlags[teamNameEnglish] || '🏳️';
     return `${flag} ${teamName}`;
   }
   
@@ -469,9 +601,11 @@ function translateTeamDesignation(designation) {
     const team = groupsData.groups[group].teams.find(t => t.position === position);
     if (team && team.name !== 'TBD') {
       const flag = countryFlags[team.name] || '🏳️';
-      return `${flag} ${team.name}`;
+      const translatedName = translateCountry(team.name);
+      return `${flag} ${translatedName}`;
     }
-    return `${position === 1 ? '1st' : position === 2 ? '2nd' : '3rd'} in Group ${group}`;
+    const positionLabel = position === 1 ? t('first') : position === 2 ? t('second') : t('third');
+    return `${positionLabel} ${t('group')} ${group}`;
   }
   
   return designation;
@@ -479,7 +613,7 @@ function translateTeamDesignation(designation) {
 
 function createMatchCard(match, round, cssClass, opponentInfo = null) {
   const opponentHtml = opponentInfo 
-    ? `<div class="match-opponent">vs <strong>${opponentInfo}</strong></div>` 
+    ? `<div class="match-opponent">${t('vs')} <strong>${opponentInfo}</strong></div>` 
     : '';
   
   return `
@@ -494,9 +628,14 @@ function createMatchCard(match, round, cssClass, opponentInfo = null) {
 }
 
 function formatDate(dateStr) {
-  const date = new Date(dateStr);
-  const options = { month: 'short', day: 'numeric', timeZone: 'UTC' };
-  return date.toLocaleDateString('en-US', options);
+  const date = new Date(dateStr + 'T00:00:00Z');
+  const day = date.getUTCDate();
+  const monthIndex = date.getUTCMonth();
+  
+  const months = translationsData?.translations[currentLang]?.months?.short 
+    || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  return `${months[monthIndex]} ${day}`;
 }
 
 document.addEventListener('DOMContentLoaded', init);
