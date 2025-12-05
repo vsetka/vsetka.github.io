@@ -1,0 +1,100 @@
+{
+  "groups": {
+    "A": {
+      "teams": [
+        { "position": 1, "name": "Mexico", "pot": 1 },
+        { "position": 2, "name": "South Africa", "pot": 3 },
+        { "position": 3, "name": "South Korea", "pot": 2 },
+        { "position": 4, "name": "TBD", "pot": 4 }
+      ]
+    },
+    "B": {
+      "teams": [
+        { "position": 1, "name": "Canada", "pot": 1 },
+        { "position": 2, "name": "TBD", "pot": 4 },
+        { "position": 3, "name": "Qatar", "pot": 3 },
+        { "position": 4, "name": "Switzerland", "pot": 2 }
+      ]
+    },
+    "C": {
+      "teams": [
+        { "position": 1, "name": "Brazil", "pot": 1 },
+        { "position": 2, "name": "Morocco", "pot": 2 },
+        { "position": 3, "name": "Haiti", "pot": 4 },
+        { "position": 4, "name": "Scotland", "pot": 3 }
+      ]
+    },
+    "D": {
+      "teams": [
+        { "position": 1, "name": "USA", "pot": 1 },
+        { "position": 2, "name": "Paraguay", "pot": 3 },
+        { "position": 3, "name": "Australia", "pot": 2 },
+        { "position": 4, "name": "TBD", "pot": 4 }
+      ]
+    },
+    "E": {
+      "teams": [
+        { "position": 1, "name": "Germany", "pot": 1 },
+        { "position": 2, "name": "Curaçao", "pot": 4 },
+        { "position": 3, "name": "Ivory Coast", "pot": 3 },
+        { "position": 4, "name": "Ecuador", "pot": 2 }
+      ]
+    },
+    "F": {
+      "teams": [
+        { "position": 1, "name": "Netherlands", "pot": 1 },
+        { "position": 2, "name": "Japan", "pot": 2 },
+        { "position": 3, "name": "TBD", "pot": 4 },
+        { "position": 4, "name": "Tunisia", "pot": 3 }
+      ]
+    },
+    "G": {
+      "teams": [
+        { "position": 1, "name": "Belgium", "pot": 1 },
+        { "position": 2, "name": "Egypt", "pot": 3 },
+        { "position": 3, "name": "Iran", "pot": 2 },
+        { "position": 4, "name": "New Zealand", "pot": 4 }
+      ]
+    },
+    "H": {
+      "teams": [
+        { "position": 1, "name": "Spain", "pot": 1 },
+        { "position": 2, "name": "Cape Verde", "pot": 4 },
+        { "position": 3, "name": "Saudi Arabia", "pot": 3 },
+        { "position": 4, "name": "Uruguay", "pot": 2 }
+      ]
+    },
+    "I": {
+      "teams": [
+        { "position": 1, "name": "France", "pot": 1 },
+        { "position": 2, "name": "Senegal", "pot": 2 },
+        { "position": 3, "name": "TBD", "pot": 4 },
+        { "position": 4, "name": "Norway", "pot": 3 }
+      ]
+    },
+    "J": {
+      "teams": [
+        { "position": 1, "name": "Argentina", "pot": 1 },
+        { "position": 2, "name": "Algeria", "pot": 3 },
+        { "position": 3, "name": "Austria", "pot": 2 },
+        { "position": 4, "name": "Jordan", "pot": 4 }
+      ]
+    },
+    "K": {
+      "teams": [
+        { "position": 1, "name": "Portugal", "pot": 1 },
+        { "position": 2, "name": "TBD", "pot": 4 },
+        { "position": 3, "name": "Uzbekistan", "pot": 3 },
+        { "position": 4, "name": "Colombia", "pot": 2 }
+      ]
+    },
+    "L": {
+      "teams": [
+        { "position": 1, "name": "England", "pot": 1 },
+        { "position": 2, "name": "Croatia", "pot": 2 },
+        { "position": 3, "name": "Ghana", "pot": 4 },
+        { "position": 4, "name": "Panama", "pot": 3 }
+      ]
+    }
+  }
+}

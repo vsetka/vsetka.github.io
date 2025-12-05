@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FIFA World Cup 2026 - Path Calculator</title>
+  
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-T1GN8566NK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-T1GN8566NK');
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">⚽</span>
+        <div class="logo-text">
+          <h1 data-i18n="appTitle">FIFA World Cup 2026</h1>
+          <p data-i18n="appSubtitle">Path to the Final Explorer</p>
+        </div>
+      </div>
+      <div class="language-selector">
+        <button class="lang-toggle" id="lang-toggle" aria-label="Select language">
+          <span class="lang-flag" id="current-lang-flag">🇬🇧</span>
+          <span class="lang-code" id="current-lang-code">EN</span>
+          <span class="lang-arrow">▼</span>
+        </button>
+        <div class="lang-dropdown" id="lang-dropdown">
+          <!-- Language options will be populated by JS -->
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="selector-section">
+        <div class="selector-card">
+          <h2 data-i18n="selectTeam">Select a Team</h2>
+          <p class="selector-hint" data-i18n="selectTeamHint">Choose your team to see their potential path to the final</p>
+          <div class="team-selector">
+            <select id="team-select">
+              <option value="" data-i18n="chooseTeam">Choose a team...</option>
+            </select>
+          </div>
+          <div id="team-info" class="team-info hidden">
+            <div class="team-badge">
+              <span class="team-flag" id="team-flag"></span>
+              <span class="team-name" id="selected-team-name"></span>
+            </div>
+            <div class="group-info">
+              <span class="label" data-i18n="group">Group</span>
+              <span class="value" id="team-group"></span>
+            </div>
+            <div class="position-info">
+              <span class="label" data-i18n="position">Position</span>
+              <span class="value" id="team-position"></span>
+            </div>
+            <div class="position-info">
+              <span class="label" data-i18n="pot">Pot</span>
+              <span class="value" id="team-pot"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="scenario-selector hidden" id="scenario-selector">
+          <h3 data-i18n="groupFinishScenario">Group Finish Scenario</h3>
+          <div class="scenario-buttons">
+            <button class="scenario-btn" data-finish="1">
+              <span class="finish-position" data-i18n="first">1st</span>
+              <span class="finish-label" data-i18n="groupWinner">Group Winner</span>
+            </button>
+            <button class="scenario-btn" data-finish="2">
+              <span class="finish-position" data-i18n="second">2nd</span>
+              <span class="finish-label" data-i18n="runnerUp">Runner-Up</span>
+            </button>
+            <button class="scenario-btn" data-finish="3">
+              <span class="finish-position" data-i18n="third">3rd</span>
+              <span class="finish-label" data-i18n="thirdPlace">Third Place</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="path-section hidden" id="path-section">
+        <h2><span data-i18n="knockoutPathFor">Knockout Path for</span> <span id="path-team-name"></span></h2>
+        
+        <div class="paths-container" id="paths-container">
+          <!-- Paths will be dynamically generated -->
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p data-i18n="footerText">Data based on official FIFA World Cup 2026 format</p>
+      <p class="disclaimer" data-i18n="disclaimer">Venues and matchups are subject to change</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
