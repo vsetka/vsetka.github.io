@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FIFA World Cup 2026 - Path Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">⚽</span>
+        <div class="logo-text">
+          <h1>FIFA World Cup 2026</h1>
+          <p>Path Calculator</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="selector-section">
+        <div class="selector-card">
+          <h2>Select Your Team</h2>
+          <div class="team-selector">
+            <select id="team-select">
+              <option value="">Choose a team...</option>
+            </select>
+          </div>
+          <div id="team-info" class="team-info hidden">
+            <div class="team-badge">
+              <span class="team-flag" id="team-flag"></span>
+              <span class="team-name" id="selected-team-name"></span>
+            </div>
+            <div class="group-info">
+              <span class="label">Group</span>
+              <span class="value" id="team-group"></span>
+            </div>
+            <div class="position-info">
+              <span class="label">Draw Position</span>
+              <span class="value" id="team-position"></span>
+            </div>
+            <div class="position-info">
+              <span class="label">Pot</span>
+              <span class="value" id="team-pot"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="scenario-selector hidden" id="scenario-selector">
+          <h3>Choose Group Stage Finish</h3>
+          <div class="scenario-buttons">
+            <button class="scenario-btn" data-finish="1">
+              <span class="finish-position">1st</span>
+              <span class="finish-label">Group Winner</span>
+            </button>
+            <button class="scenario-btn" data-finish="2">
+              <span class="finish-position">2nd</span>
+              <span class="finish-label">Runner-up</span>
+            </button>
+            <button class="scenario-btn" data-finish="3">
+              <span class="finish-position">3rd</span>
+              <span class="finish-label">Best Third</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="path-section hidden" id="path-section">
+        <h2>Tournament Path</h2>
+        <p class="path-subtitle">All possible routes to the Final if <span id="path-team-name"></span> wins every match</p>
+        
+        <div class="paths-container" id="paths-container">
+          <!-- Paths will be dynamically generated -->
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Data based on FIFA World Cup 2026™ official match schedule</p>
+      <p class="disclaimer">Not affiliated with FIFA. For entertainment purposes only.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
