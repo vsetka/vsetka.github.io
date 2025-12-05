@@ -197,10 +197,10 @@ function setLanguage(lang) {
 function populateTeamSelector() {
   const select = document.getElementById('team-select');
   
-  // Clear existing options except the first one
-  while (select.options.length > 1) {
-    select.remove(1);
-  }
+  // Clear existing optgroups and options except the first option
+  const firstOption = select.options[0];
+  select.innerHTML = '';
+  select.appendChild(firstOption);
   
   Object.entries(groupsData.groups).forEach(([groupLetter, groupData]) => {
     const optgroup = document.createElement('optgroup');
