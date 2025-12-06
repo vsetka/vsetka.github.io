@@ -5,6 +5,18 @@ let selectedTeam = null;
 let selectedFinish = null;
 let currentLang = 'en';
 
+// Google Analytics event tracking helper (with error handling)
+function trackEvent(eventName, params = {}) {
+  try {
+    if (typeof gtag === 'function') {
+      gtag('event', eventName, params);
+    }
+  } catch (e) {
+    // Silently fail - don't let analytics break the app
+    console.debug('Analytics event failed:', eventName, e);
+  }
+}
+
 const countryFlags = {
   "Mexico": "🇲🇽",
   "South Africa": "🇿🇦",
@@ -267,6 +279,13 @@ function handleTeamSelect(e) {
     position: parseInt(position)
   };
   
+  // Track team selection in single team mode
+  trackEvent('team_select_single', {
+    team_name: team.name,
+    team_group: group,
+    team_pot: team.pot
+  });
+  
   showTeamInfo(selectedTeam);
   showScenarioSelector();
   clearPaths();
@@ -309,6 +328,17 @@ function handleScenarioSelect(e) {
   btn.classList.add('active');
   
   selectedFinish = finish;
+  
+  // Track path view with team and finish position
+  if (selectedTeam) {
+    trackEvent('view_path', {
+      team_name: selectedTeam.name,
+      team_group: selectedTeam.group,
+      finish_position: finish,
+      finish_label: finish === 1 ? '1st' : finish === 2 ? '2nd' : '3rd'
+    });
+  }
+  
   calculateAndShowPaths();
 }
 
@@ -712,6 +742,12 @@ function setupModeTabs() {
     tab.addEventListener('click', () => {
       const mode = tab.dataset.mode;
       
+      // Track mode selection
+      trackEvent('mode_select', {
+        mode: mode,
+        mode_name: mode === 'single' ? 'Single Team Path' : 'Multi-Team Venue Finder'
+      });
+      
       // Update active tab
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
@@ -776,9 +812,23 @@ function populateTeamCheckboxes() {
       if (checkbox.checked) {
         selectedTeamsForOverlap.add(team.id);
         item.classList.add('selected');
+        
+        // Track team selection in multi-team mode
+        trackEvent('team_select_multi', {
+          team_name: team.name,
+          team_group: team.group,
+          action: 'add'
+        });
       } else {
         selectedTeamsForOverlap.delete(team.id);
         item.classList.remove('selected');
+        
+        // Track team deselection in multi-team mode
+        trackEvent('team_select_multi', {
+          team_name: team.name,
+          team_group: team.group,
+          action: 'remove'
+        });
       }
       
       updateSelectedCount();
@@ -803,6 +853,19 @@ function updateSelectedCount() {
 }
 
 function calculateVenueOverlap() {
+  // Track the calculate overlap action with selected teams
+  const selectedTeamNames = [];
+  selectedTeamsForOverlap.forEach(teamId => {
+    const [group, position] = teamId.split('-');
+    const teamData = groupsData.groups[group].teams.find(t => t.position === parseInt(position));
+    if (teamData) selectedTeamNames.push(teamData.name);
+  });
+  
+  trackEvent('calculate_overlap', {
+    team_count: selectedTeamsForOverlap.size,
+    teams: selectedTeamNames.join(', ')
+  });
+  
   // venue -> { teams: Set, teamMatches: { teamName: [{ matchId, round, date, scenario }] } }
   const venueTeamMap = {};
   
