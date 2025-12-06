@@ -753,17 +753,23 @@ function setupModeTabs() {
       tab.classList.add('active');
       
       // Show/hide sections
+      document.querySelectorAll('section[id$="-mode"]').forEach(el => el.classList.add('hidden'));
+      pathSection.classList.add('hidden');
+      
       if (mode === 'single') {
         singleMode.classList.remove('hidden');
-        multiMode.classList.add('hidden');
-      } else {
-        singleMode.classList.add('hidden');
-        pathSection.classList.add('hidden');
+      } else if (mode === 'multi') {
         multiMode.classList.remove('hidden');
         populateTeamCheckboxes();
+      } else if (mode === 'venue') {
+        document.getElementById('venue-view-mode').classList.remove('hidden');
+        populateVenueSelector();
       }
     });
   });
+  
+  // Setup venue selector
+  document.getElementById('venue-select')?.addEventListener('change', handleVenueSelect);
 }
 
 function populateTeamCheckboxes() {
@@ -1061,6 +1067,577 @@ function displayVenueResults(results) {
   
   resultsSection.classList.remove('hidden');
   resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ============================================================================
+// Venue View Logic
+// ============================================================================
+
+let currentVenueKey = null;
+let currentVenueMatches = [];
+let venueFilterTeams = new Set();
+let venueFilterMatches = new Set();
+
+function populateVenueSelector() {
+  const select = document.getElementById('venue-select');
+  if (!select || select.options.length > 1) return; // Already populated
+  
+  // Sort venues by name
+  const venues = Object.entries(matchesData.venues)
+    .map(([key, data]) => ({ key, name: data.name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+    
+  venues.forEach(venue => {
+    const option = document.createElement('option');
+    option.value = venue.key;
+    option.textContent = venue.name;
+    select.appendChild(option);
+  });
+  
+  // Setup filter handlers
+  document.getElementById('clear-team-filter')?.addEventListener('click', clearVenueTeamFilter);
+  document.getElementById('clear-match-filter')?.addEventListener('click', clearVenueMatchFilter);
+}
+
+function handleVenueSelect(e) {
+  const venueKey = e.target.value;
+  if (!venueKey) {
+    document.getElementById('venue-timeline').classList.add('hidden');
+    document.getElementById('venue-filters').classList.add('hidden');
+    return;
+  }
+  
+  const venueData = matchesData.venues[venueKey];
+  if (!venueData || !venueData.matches) return;
+  
+  currentVenueKey = venueKey;
+  venueFilterTeams.clear();
+  venueFilterMatches.clear();
+  
+  // Use the confirmed matches array for this venue
+  const venueMatchIds = venueData.matches;
+  
+  // Find match data for each ID and determine round
+  currentVenueMatches = venueMatchIds.map(matchId => {
+    let matchData = null;
+    let roundName = '';
+    let roundKey = '';
+    
+    Object.entries(matchesData.rounds).forEach(([rKey, rData]) => {
+      const found = rData.matches.find(m => m.id === matchId);
+      if (found) {
+        matchData = found;
+        roundName = rData.name;
+        roundKey = rKey;
+      }
+    });
+    
+    return matchData ? { ...matchData, roundName, roundKey } : null;
+  }).filter(Boolean);
+  
+  // Sort by match number
+  currentVenueMatches.sort((a, b) => {
+    const idA = parseInt(a.id.slice(1));
+    const idB = parseInt(b.id.slice(1));
+    return idA - idB;
+  });
+  
+  // Populate filter chips
+  populateVenueMatchFilter();
+  populateVenueTeamFilter();
+  
+  // Show filters
+  document.getElementById('venue-filters').classList.remove('hidden');
+  
+  // Render the venue timeline
+  renderVenueTimeline(venueData.name);
+  
+  trackEvent('venue_view', { venue_name: venueData.name });
+}
+
+function populateVenueMatchFilter() {
+  const container = document.getElementById('venue-match-chips');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  
+  currentVenueMatches.forEach(match => {
+    const chip = document.createElement('div');
+    chip.className = 'match-chip';
+    chip.dataset.matchId = match.id;
+    
+    // Abbreviate round name
+    const roundAbbrev = match.roundKey === 'groupStage' ? 'GS' :
+                        match.roundKey === 'roundOf32' ? 'R32' :
+                        match.roundKey === 'roundOf16' ? 'R16' :
+                        match.roundKey === 'quarterFinals' ? 'QF' :
+                        match.roundKey === 'semiFinals' ? 'SF' :
+                        match.roundKey === 'final' ? 'F' :
+                        match.roundKey === 'thirdPlace' ? '3rd' : '';
+    
+    chip.innerHTML = `
+      <span class="chip-id">${match.id}</span>
+      <span class="chip-round">${roundAbbrev}</span>
+    `;
+    
+    chip.addEventListener('click', () => toggleVenueMatchFilter(match.id, chip));
+    container.appendChild(chip);
+  });
+}
+
+function toggleVenueMatchFilter(matchId, chipEl) {
+  if (venueFilterMatches.has(matchId)) {
+    venueFilterMatches.delete(matchId);
+    chipEl.classList.remove('selected');
+  } else {
+    venueFilterMatches.add(matchId);
+    chipEl.classList.add('selected');
+  }
+  
+  // Re-render with filter
+  const venueData = matchesData.venues[currentVenueKey];
+  renderVenueTimeline(venueData.name);
+}
+
+function clearVenueMatchFilter() {
+  venueFilterMatches.clear();
+  document.querySelectorAll('.match-chip.selected').forEach(chip => {
+    chip.classList.remove('selected');
+  });
+  
+  const venueData = matchesData.venues[currentVenueKey];
+  if (venueData) {
+    renderVenueTimeline(venueData.name);
+  }
+}
+
+function populateVenueTeamFilter() {
+  const container = document.getElementById('venue-team-chips');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  
+  // Collect all unique teams that could play at this venue
+  const allTeams = new Set();
+  
+  currentVenueMatches.forEach(match => {
+    const matchups = getPossibleMatchupsForMatch(match, currentVenueKey);
+    matchups.forEach(m => {
+      // Extract team names from display strings (remove flags)
+      const team1Clean = extractTeamName(m.team1);
+      const team2Clean = extractTeamName(m.team2);
+      if (team1Clean && !team1Clean.includes('Winner') && !team1Clean.includes('Loser')) {
+        allTeams.add(team1Clean);
+      }
+      if (team2Clean && !team2Clean.includes('Winner') && !team2Clean.includes('Loser')) {
+        allTeams.add(team2Clean);
+      }
+    });
+  });
+  
+  // Sort teams alphabetically
+  const sortedTeams = Array.from(allTeams).sort();
+  
+  sortedTeams.forEach(teamName => {
+    const chip = document.createElement('div');
+    chip.className = 'team-chip';
+    chip.dataset.team = teamName;
+    
+    // Find flag for team
+    const englishName = Object.keys(countryFlags).find(name => 
+      translateCountry(name) === teamName || name === teamName
+    );
+    const flag = englishName ? countryFlags[englishName] : '🏳️';
+    
+    chip.innerHTML = `
+      <span class="chip-flag">${flag}</span>
+      <span class="chip-name">${teamName}</span>
+    `;
+    
+    chip.addEventListener('click', () => toggleVenueTeamFilter(teamName, chip));
+    container.appendChild(chip);
+  });
+}
+
+function extractTeamName(displayStr) {
+  // Remove flag emoji and trim
+  return displayStr.replace(/[\u{1F1E0}-\u{1F1FF}][\u{1F1E0}-\u{1F1FF}]|[\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0073}\u{E0063}\u{E0074}\u{E0077}\u{E006C}\u{E007F}]+|🏳️/gu, '').trim();
+}
+
+function toggleVenueTeamFilter(teamName, chipEl) {
+  if (venueFilterTeams.has(teamName)) {
+    venueFilterTeams.delete(teamName);
+    chipEl.classList.remove('selected');
+  } else {
+    venueFilterTeams.add(teamName);
+    chipEl.classList.add('selected');
+  }
+  
+  // Re-render with filter
+  const venueData = matchesData.venues[currentVenueKey];
+  renderVenueTimeline(venueData.name);
+}
+
+function clearVenueTeamFilter() {
+  venueFilterTeams.clear();
+  document.querySelectorAll('.team-chip.selected').forEach(chip => {
+    chip.classList.remove('selected');
+  });
+  
+  const venueData = matchesData.venues[currentVenueKey];
+  if (venueData) {
+    renderVenueTimeline(venueData.name);
+  }
+}
+
+function renderVenueTimeline(venueName) {
+  const titleEl = document.getElementById('venue-timeline-title');
+  const container = document.getElementById('venue-timeline-container');
+  
+  // Add filter badges to title if filtering
+  const totalFilters = venueFilterTeams.size + venueFilterMatches.size;
+  const filterBadge = totalFilters > 0 
+    ? `<span class="filter-active-badge">${totalFilters} ${t('filtered')}</span>` 
+    : '';
+  titleEl.innerHTML = `${venueName} ${filterBadge}`;
+  
+  container.innerHTML = '';
+  
+  // Determine which matches to show
+  let matchesToRender = currentVenueMatches;
+  
+  // Apply match filter if matches are selected
+  if (venueFilterMatches.size > 0) {
+    matchesToRender = currentVenueMatches.filter(m => venueFilterMatches.has(m.id));
+  }
+  
+  // Render each match with filtered matchups
+  matchesToRender.forEach(match => {
+    // Get all possible matchups for this match
+    let possibleMatchups = getPossibleMatchupsForMatch(match, currentVenueKey);
+    
+    // Apply team filter if teams are selected
+    if (venueFilterTeams.size > 0) {
+      possibleMatchups = possibleMatchups.filter(matchup => {
+        const team1Clean = extractTeamName(matchup.team1);
+        const team2Clean = extractTeamName(matchup.team2);
+        return venueFilterTeams.has(team1Clean) || venueFilterTeams.has(team2Clean);
+      });
+    }
+    
+    // Skip match card if no matchups after filtering
+    if (possibleMatchups.length === 0) return;
+    
+    const matchCard = document.createElement('div');
+    matchCard.className = `venue-match-card ${getRoundClass(match.roundKey)}`;
+    
+    const matchupsHtml = possibleMatchups.map(matchup => `
+      <div class="venue-matchup-item">
+        <div class="matchup-teams">
+          <span class="team">${matchup.team1}</span>
+          <span class="vs">${t('vs')}</span>
+          <span class="team">${matchup.team2}</span>
+        </div>
+        ${matchup.condition ? `<div class="matchup-condition">${matchup.condition}</div>` : ''}
+      </div>
+    `).join('');
+    
+    matchCard.innerHTML = `
+      <div class="venue-match-header">
+        <div class="match-round-badge">${match.roundName}</div>
+        <div class="match-id-large">${match.id}</div>
+        <div class="match-date-badge">${formatDate(match.date)}</div>
+      </div>
+      <div class="venue-matchups-list">
+        <div class="matchups-label">${t('possibleMatchups')}:</div>
+        ${matchupsHtml}
+      </div>
+    `;
+    
+    container.appendChild(matchCard);
+  });
+  
+  document.getElementById('venue-timeline').classList.remove('hidden');
+}
+
+function getPossibleMatchupsForMatch(match, venueKey) {
+  const matchups = [];
+  
+  // For group stage matches
+  if (match.roundKey === 'groupStage') {
+    // Check if this is a match with multiple possible venues
+    if (match.venues && match.venues.length > 1) {
+      // Find paired match (same group, same date, same venues)
+      const pairedMatch = matchesData.rounds.groupStage.matches.find(m => 
+        m.id !== match.id &&
+        m.group === match.group &&
+        m.date === match.date &&
+        m.venues && 
+        [...m.venues].sort().join(',') === [...match.venues].sort().join(',')
+      );
+      
+      // Both this match and paired match could happen at this venue
+      // Add this match's teams
+      matchups.push({
+        team1: formatTeamWithFlag(match.teams[0]),
+        team2: formatTeamWithFlag(match.teams[1]),
+        condition: ''
+      });
+      
+      // Add paired match's teams if exists
+      if (pairedMatch) {
+        matchups.push({
+          team1: formatTeamWithFlag(pairedMatch.teams[0]),
+          team2: formatTeamWithFlag(pairedMatch.teams[1]),
+          condition: ''
+        });
+      }
+    } else {
+      // Single venue - confirmed matchup
+      matchups.push({
+        team1: formatTeamWithFlag(match.teams[0]),
+        team2: formatTeamWithFlag(match.teams[1]),
+        condition: ''
+      });
+    }
+  } 
+  // For knockout matches
+  else {
+    const slot1 = match.teams[0];
+    const slot2 = match.teams[1];
+    
+    // Resolve all possible teams for each slot
+    const possibleTeams1 = resolvePossibleTeamsForSlot(slot1);
+    const possibleTeams2 = resolvePossibleTeamsForSlot(slot2);
+    
+    // Create matchup combinations
+    possibleTeams1.forEach(t1 => {
+      possibleTeams2.forEach(t2 => {
+        // Build condition string
+        const conditions = [];
+        if (t1.condition) conditions.push(t1.condition);
+        if (t2.condition) conditions.push(t2.condition);
+        
+        matchups.push({
+          team1: t1.display,
+          team2: t2.display,
+          condition: conditions.join(' & ')
+        });
+      });
+    });
+  }
+  
+  return matchups;
+}
+
+function resolvePossibleTeamsForSlot(slot) {
+  // Handle W## (Winner of match)
+  if (slot.startsWith('W')) {
+    const matchNum = slot.slice(1);
+    const sourceMatch = findMatchById(`M${matchNum}`);
+    if (sourceMatch) {
+      // Recursively get all possible teams that could win this match
+      const allPossibleTeams = getAllPossibleTeamsForMatch(sourceMatch);
+      return allPossibleTeams.map(team => ({
+        display: team.display,
+        condition: `${t('winnerOf')} M${matchNum}` + (team.condition ? ` (${team.condition})` : '')
+      }));
+    }
+    return [{ display: `${t('winnerOf')} M${matchNum}`, condition: '' }];
+  }
+  
+  // Handle L## (Loser of match)
+  if (slot.startsWith('L')) {
+    const matchNum = slot.slice(1);
+    const sourceMatch = findMatchById(`M${matchNum}`);
+    if (sourceMatch) {
+      const allPossibleTeams = getAllPossibleTeamsForMatch(sourceMatch);
+      return allPossibleTeams.map(team => ({
+        display: team.display,
+        condition: `${t('loserOf')} M${matchNum}` + (team.condition ? ` (${team.condition})` : '')
+      }));
+    }
+    return [{ display: `${t('loserOf')} M${matchNum}`, condition: '' }];
+  }
+  
+  // Handle group positions (1A, 2B, etc) - return ALL teams that could finish in that position
+  if (slot.match(/^[1-4][A-L]$/)) {
+    const pos = parseInt(slot[0]);
+    const group = slot[1];
+    const posLabel = pos === 1 ? t('first') : pos === 2 ? t('second') : pos === 3 ? t('third') : `${pos}th`;
+    
+    // All teams in this group could potentially finish in this position
+    const groupTeams = groupsData.groups[group]?.teams || [];
+    return groupTeams.map(teamData => {
+      if (teamData.name && !teamData.name.includes('playoff') && teamData.name !== 'TBD') {
+        const flag = countryFlags[teamData.name] || '🏳️';
+        return {
+          display: `${flag} ${translateCountry(teamData.name)}`,
+          condition: `${t('if')} ${posLabel} ${t('inGroup')} ${group}`
+        };
+      }
+      return {
+        display: teamData.name || `${posLabel} ${t('group')} ${group}`,
+        condition: ''
+      };
+    }).filter(t => t.display && !t.display.includes('playoff'));
+  }
+  
+  // Handle 3rd place slots (3ABCDF)
+  if (slot.startsWith('3') && slot.length > 2) {
+    const groups = slot.slice(1).split('');
+    const results = [];
+    
+    groups.forEach(g => {
+      const groupTeams = groupsData.groups[g]?.teams || [];
+      groupTeams.forEach(teamData => {
+        if (teamData.name && !teamData.name.includes('playoff') && teamData.name !== 'TBD') {
+          const flag = countryFlags[teamData.name] || '🏳️';
+          results.push({
+            display: `${flag} ${translateCountry(teamData.name)}`,
+            condition: `${t('if')} ${t('third')} ${t('inGroup')} ${g} ${t('qualifies')}`
+          });
+        }
+      });
+    });
+    
+    return results;
+  }
+  
+  return [{ display: slot, condition: '' }];
+}
+
+// Get all possible teams that could play in a match (both slots combined)
+function getAllPossibleTeamsForMatch(match) {
+  const allTeams = [];
+  
+  match.teams.forEach(slot => {
+    const teamsForSlot = resolvePossibleTeamsForSlotSimple(slot);
+    teamsForSlot.forEach(team => {
+      // Avoid duplicates
+      if (!allTeams.find(t => t.display === team.display)) {
+        allTeams.push(team);
+      }
+    });
+  });
+  
+  return allTeams;
+}
+
+// Simple resolver that doesn't recurse into W## references (to avoid infinite loops)
+function resolvePossibleTeamsForSlotSimple(slot) {
+  // Handle W## - just return the reference, don't recurse
+  if (slot.startsWith('W') || slot.startsWith('L')) {
+    return [{ display: slot, condition: '' }];
+  }
+  
+  // Handle group positions (1A, 2B, etc)
+  if (slot.match(/^[1-4][A-L]$/)) {
+    const pos = parseInt(slot[0]);
+    const group = slot[1];
+    const posLabel = pos === 1 ? t('first') : pos === 2 ? t('second') : pos === 3 ? t('third') : `${pos}th`;
+    
+    const groupTeams = groupsData.groups[group]?.teams || [];
+    return groupTeams.map(teamData => {
+      if (teamData.name && !teamData.name.includes('playoff') && teamData.name !== 'TBD') {
+        const flag = countryFlags[teamData.name] || '🏳️';
+        return {
+          display: `${flag} ${translateCountry(teamData.name)}`,
+          condition: `${t('if')} ${posLabel} ${t('inGroup')} ${group}`
+        };
+      }
+      return null;
+    }).filter(Boolean);
+  }
+  
+  // Handle 3rd place slots (3ABCDF)
+  if (slot.startsWith('3') && slot.length > 2) {
+    const groups = slot.slice(1).split('');
+    const results = [];
+    
+    groups.forEach(g => {
+      const groupTeams = groupsData.groups[g]?.teams || [];
+      groupTeams.forEach(teamData => {
+        if (teamData.name && !teamData.name.includes('playoff') && teamData.name !== 'TBD') {
+          const flag = countryFlags[teamData.name] || '🏳️';
+          results.push({
+            display: `${flag} ${translateCountry(teamData.name)}`,
+            condition: `${t('if')} ${t('third')} ${t('inGroup')} ${g} ${t('qualifies')}`
+          });
+        }
+      });
+    });
+    
+    return results;
+  }
+  
+  return [{ display: slot, condition: '' }];
+}
+
+function getPossibleTeamsFromMatch(match) {
+  // For knockout matches, just return the slots
+  if (match.teams[0].startsWith('W') || match.teams[0].startsWith('L')) {
+    return [
+      { team: match.teams[0], condition: '' },
+      { team: match.teams[1], condition: '' }
+    ];
+  }
+  
+  // For matches with actual team designations
+  const teams = [];
+  match.teams.forEach(slot => {
+    if (slot.match(/^[1-4][A-L]$/)) {
+      teams.push({ team: formatTeamWithFlag(slot), condition: '' });
+    } else if (slot.startsWith('3') && slot.length > 2) {
+      const groups = slot.slice(1).split('');
+      groups.forEach(g => {
+        teams.push({ 
+          team: formatTeamWithFlag(`3${g}`), 
+          condition: `${t('third')} ${t('group')} ${g}` 
+        });
+      });
+    } else {
+      teams.push({ team: slot, condition: '' });
+    }
+  });
+  return teams;
+}
+
+function findMatchById(matchId) {
+  let found = null;
+  Object.values(matchesData.rounds).forEach(round => {
+    const match = round.matches.find(m => m.id === matchId);
+    if (match) found = match;
+  });
+  return found;
+}
+
+function formatTeamWithFlag(teamCode) {
+  // Handle group position codes like 1A, 2B, 3C
+  if (teamCode.match(/^[1-4][A-L]$/)) {
+    const pos = parseInt(teamCode[0]);
+    const group = teamCode[1];
+    const teamData = groupsData.groups[group]?.teams.find(t => t.position === pos);
+    
+    if (teamData && teamData.name && !teamData.name.includes('playoff') && teamData.name !== 'TBD') {
+      const flag = countryFlags[teamData.name] || '🏳️';
+      return `${flag} ${translateCountry(teamData.name)}`;
+    }
+    // Fallback for playoffs/TBD
+    return teamCode;
+  }
+  
+  return teamCode;
+}
+
+function getRoundClass(roundKey) {
+  if (roundKey === 'groupStage') return 'group-stage';
+  if (roundKey === 'roundOf32') return 'round-32';
+  if (roundKey === 'roundOf16') return 'round-16';
+  if (roundKey === 'quarterFinals') return 'quarter';
+  if (roundKey === 'semiFinals') return 'semi';
+  if (roundKey === 'final') return 'final';
+  return '';
 }
 
 document.addEventListener('DOMContentLoaded', init);

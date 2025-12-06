@@ -1149,6 +1149,440 @@ html[dir="rtl"] .match-venue::after {
   white-space: nowrap;
 }
 
+/* Venue View */
+.venue-timeline {
+  margin-top: 2rem;
+}
+
+.venue-timeline.hidden {
+  display: none;
+}
+
+.venue-timeline h2 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--accent-gold);
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.timeline-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+}
+
+/* Match View */
+.match-details {
+  margin-top: 2rem;
+}
+
+.match-details.hidden {
+  display: none;
+}
+
+.match-header-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+}
+
+.match-header-card h2 {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: var(--accent-gold);
+  margin-bottom: 0.5rem;
+}
+
+.match-header-meta {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin-top: 1rem;
+}
+
+.scenarios-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  padding-left: 0.5rem;
+  border-left: 4px solid var(--accent-gold);
+}
+
+.match-scenarios-container {
+  display: grid;
+  gap: 1rem;
+}
+
+.scenario-card {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.scenario-card:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-gold);
+}
+
+.scenario-teams {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.scenario-condition {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: right;
+  max-width: 40%;
+}
+
+.scenario-condition strong {
+  color: var(--accent-teal);
+}
+
+@media (max-width: 768px) {
+  .scenario-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .scenario-condition {
+    text-align: left;
+    max-width: 100%;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--border-color);
+    width: 100%;
+  }
+}
+
+.match-slot-card {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 1rem;
+  border-left: 3px solid var(--accent-blue);
+}
+
+.slot-header {
+  font-weight: 600;
+  color: var(--accent-blue);
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.slot-possibilities {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.slot-possibility {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: var(--bg-card);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.slot-possibility .condition {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.vs-divider {
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--text-muted);
+  margin: 0.5rem 0;
+}
+
+.match-teams-large {
+  margin-top: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.match-teams-large .vs {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0 0.5rem;
+}
+
+/* Venue Match Cards */
+.venue-match-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  overflow: hidden;
+  border-left: 4px solid var(--border-color);
+}
+
+.venue-match-card.group-stage { border-left-color: var(--group-stage); }
+.venue-match-card.round-32 { border-left-color: var(--round-32); }
+.venue-match-card.round-16 { border-left-color: var(--round-16); }
+.venue-match-card.quarter { border-left-color: var(--quarter); }
+.venue-match-card.semi { border-left-color: var(--semi); }
+.venue-match-card.final { border-left-color: var(--final); }
+
+.venue-match-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.match-round-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.match-id-large {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--accent-gold);
+}
+
+.match-date-badge {
+  margin-left: auto;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.venue-matchups-list {
+  padding: 1rem 1.25rem;
+}
+
+.matchups-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.venue-matchup-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.venue-matchup-item:last-child {
+  margin-bottom: 0;
+}
+
+.matchup-teams {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.matchup-teams .team {
+  color: var(--text-primary);
+}
+
+.matchup-teams .vs {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.matchup-condition {
+  font-size: 0.75rem;
+  color: var(--accent-teal);
+  background: rgba(69, 184, 172, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-top: 0.25rem;
+  align-self: flex-start;
+}
+
+/* Filters Container */
+.filters-container {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.filters-container.hidden {
+  display: none;
+}
+
+.filter-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.filter-header h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.clear-filter-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-filter-btn:hover {
+  border-color: var(--accent-coral);
+  color: var(--accent-coral);
+}
+
+.filter-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.team-filter-chips,
+.match-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 0.25rem;
+}
+
+.match-filter-chips {
+  max-height: 120px;
+}
+
+.match-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.match-chip:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-gold);
+}
+
+.match-chip.selected {
+  background: rgba(212, 168, 85, 0.2);
+  border-color: var(--accent-gold);
+}
+
+.match-chip .chip-id {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--accent-gold);
+}
+
+.match-chip .chip-round {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+}
+
+.team-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.team-chip:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-gold);
+}
+
+.team-chip.selected {
+  background: rgba(212, 168, 85, 0.2);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.team-chip .chip-flag {
+  font-size: 1rem;
+}
+
+.team-chip .chip-name {
+  color: var(--text-primary);
+}
+
+.team-chip.selected .chip-name {
+  color: var(--accent-gold);
+}
+
+/* Filter active indicator */
+.filter-active-badge {
+  display: inline-block;
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  margin-left: 0.5rem;
+  font-weight: 600;
+}
+
 /* Responsive for multi-team */
 @media (max-width: 768px) {
   .mode-tabs {

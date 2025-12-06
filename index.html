@@ -45,6 +45,7 @@
       <div class="mode-tabs">
         <button class="mode-tab active" data-mode="single" data-i18n="singleTeamMode">Single Team Path</button>
         <button class="mode-tab" data-mode="multi" data-i18n="multiTeamMode">Multi-Team Venue Finder</button>
+        <button class="mode-tab" data-mode="venue" data-i18n="venueViewMode">Venue View</button>
       </div>
 
       <!-- Single Team Mode -->
@@ -133,6 +134,52 @@
           </div>
         </div>
       </section>
+
+      <!-- Venue View Mode -->
+      <section class="selector-section hidden" id="venue-view-mode">
+        <div class="selector-card">
+          <h2 data-i18n="selectVenue">Select a Venue</h2>
+          <p class="selector-hint" data-i18n="venueHint">See all matches scheduled for a specific venue</p>
+          <div class="team-selector">
+            <select id="venue-select">
+              <option value="" data-i18n="chooseVenue">Choose a venue...</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="filters-container hidden" id="venue-filters">
+          <!-- Match Filter -->
+          <div class="filter-card">
+            <div class="filter-header">
+              <h3 data-i18n="filterByMatches">Filter by Matches</h3>
+              <button class="clear-filter-btn" id="clear-match-filter" data-i18n="clearFilter">Clear</button>
+            </div>
+            <div class="match-filter-chips" id="venue-match-chips">
+              <!-- Match chips populated by JS -->
+            </div>
+          </div>
+          
+          <!-- Team Filter -->
+          <div class="filter-card">
+            <div class="filter-header">
+              <h3 data-i18n="filterByTeams">Filter by Teams</h3>
+              <button class="clear-filter-btn" id="clear-team-filter" data-i18n="clearFilter">Clear</button>
+            </div>
+            <p class="filter-hint" data-i18n="filterHint">Select teams to only show matchups involving them (optional)</p>
+            <div class="team-filter-chips" id="venue-team-chips">
+              <!-- Team chips populated by JS -->
+            </div>
+          </div>
+        </div>
+        
+        <div class="venue-timeline hidden" id="venue-timeline">
+          <h2 id="venue-timeline-title"></h2>
+          <div class="timeline-container" id="venue-timeline-container">
+            <!-- Matches populated by JS -->
+          </div>
+        </div>
+      </section>
+
     </main>
 
     <footer class="footer">
