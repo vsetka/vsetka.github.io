@@ -707,6 +707,11 @@ html[dir="rtl"] .match-venue::after {
   font-style: italic;
 }
 
+.group-match-item .match-id.uncertain {
+  color: var(--accent-orange);
+  font-size: 0.875rem;
+}
+
 .group-match-item .date {
   color: var(--text-muted);
 }

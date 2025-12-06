@@ -51,6 +51,22 @@ const countryFlags = {
   "TBD": "🏳️"
 };
 
+// Match ID to venue mapping - built dynamically from matchesData.venues
+let matchIdToVenue = {};
+
+function buildMatchIdToVenueMapping() {
+  matchIdToVenue = {};
+  if (!matchesData?.venues) return;
+  
+  for (const [venueKey, venueData] of Object.entries(matchesData.venues)) {
+    if (venueData.matches) {
+      for (const matchId of venueData.matches) {
+        matchIdToVenue[matchId] = venueKey;
+      }
+    }
+  }
+}
+
 // I18n helper function
 function t(key, params = {}) {
   const translations = translationsData?.translations[currentLang] || translationsData?.translations['en'] || {};
@@ -97,6 +113,9 @@ async function init() {
     groupsData = await groupsResponse.json();
     matchesData = await matchesResponse.json();
     translationsData = await translationsResponse.json();
+    
+    // Build match ID to venue mapping from venues data
+    buildMatchIdToVenueMapping();
     
     // Load saved language preference
     const savedLang = localStorage.getItem('fifa2026-lang');
@@ -331,10 +350,30 @@ function getGroupStageMatches(group, position) {
     return m.group === group && m.teams.includes(teamPos);
   });
   
-  return matches.map(m => ({
-    ...m,
-    venuesList: m.venues.map(v => matchesData.venues[v])
-  }));
+  const allGroupMatches = matchesData.rounds.groupStage.matches;
+  
+  return matches.map(m => {
+    // Find paired match (same group, date, venues) for uncertain venue matches
+    let pairedMatchId = null;
+    if (m.venues.length > 1) {
+      const venuesKey = [...m.venues].sort().join(',');
+      const paired = allGroupMatches.find(other => 
+        other.id !== m.id &&
+        other.group === m.group &&
+        other.date === m.date &&
+        [...other.venues].sort().join(',') === venuesKey
+      );
+      if (paired) {
+        pairedMatchId = paired.id;
+      }
+    }
+    
+    return {
+      ...m,
+      venuesList: m.venues.map(v => matchesData.venues[v]),
+      pairedMatchId
+    };
+  });
 }
 
 function findR32Matches(teamDesignation, finish) {
@@ -458,15 +497,33 @@ function createGroupMatchesSummary(matches) {
     const flag1 = countryFlags[team1English] || '🏳️';
     const flag2 = countryFlags[team2English] || '🏳️';
     
-    const venueNames = m.venuesList.map(v => v.name);
-    const venueDisplay = venueNames.length > 1 
-      ? venueNames.join(` ${t('or')} `) 
-      : venueNames[0];
-    const venueClass = venueNames.length > 1 ? 'venue uncertain' : 'venue';
+    let matchIdDisplay = m.id;
+    let matchIdClass = 'match-id';
+    let venueDisplay;
+    let venueClass;
+    
+    if (m.pairedMatchId) {
+      // Sort match IDs numerically
+      const id1 = parseInt(m.id.slice(1));
+      const id2 = parseInt(m.pairedMatchId.slice(1));
+      const [firstId, secondId] = id1 < id2 ? [m.id, m.pairedMatchId] : [m.pairedMatchId, m.id];
+      matchIdDisplay = `${firstId}/${secondId}`;
+      matchIdClass = 'match-id uncertain';
+      
+      // Get venues from mapping in the same order as match IDs
+      const venue1 = matchesData.venues[matchIdToVenue[firstId]]?.name || matchIdToVenue[firstId];
+      const venue2 = matchesData.venues[matchIdToVenue[secondId]]?.name || matchIdToVenue[secondId];
+      venueDisplay = `${venue1} ${t('or')} ${venue2}`;
+      venueClass = 'venue uncertain';
+    } else {
+      // Single venue match
+      venueDisplay = m.venuesList[0]?.name || '';
+      venueClass = 'venue';
+    }
     
     return `
       <div class="group-match-item">
-        <span class="match-id">${m.id}</span>
+        <span class="${matchIdClass}">${matchIdDisplay}</span>
         <span class="match-teams">${flag1} ${team1} ${t('vs')} ${flag2} ${team2}</span>
         <span class="${venueClass}">${venueDisplay}</span>
         <span class="date">${formatDate(m.date)}</span>
