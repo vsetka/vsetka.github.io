@@ -151,7 +151,7 @@
         { "id": "M73", "date": "2026-06-28", "venue": "los_angeles", "teams": ["2A", "2B"] },
         { "id": "M74", "date": "2026-06-29", "venue": "boston", "teams": ["1E", "3ABCDF"] },
         { "id": "M75", "date": "2026-06-29", "venue": "monterrey", "teams": ["1F", "2C"] },
-        { "id": "M76", "date": "2026-06-29", "venue": "houston", "teams": ["1D", "2F"] },
+        { "id": "M76", "date": "2026-06-29", "venue": "houston", "teams": ["1C", "2F"] },
         { "id": "M77", "date": "2026-06-30", "venue": "new_york", "teams": ["1I", "3CDFGH"] },
         { "id": "M78", "date": "2026-06-30", "venue": "dallas", "teams": ["2E", "2I"] },
         { "id": "M79", "date": "2026-06-30", "venue": "mexico_city", "teams": ["1A", "3CEFHI"] },

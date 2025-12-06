@@ -291,10 +291,193 @@ if (matchupIssues.length === 0) {
   }
 }
 
+// ============================================================================
+// TEST 3: Verify Path to Final for Every Team
+// ============================================================================
+console.log('\n');
+console.log('='.repeat(80));
+console.log('Path to Final Verification');
+console.log('='.repeat(80));
+console.log('');
+
+const groupsData = JSON.parse(fs.readFileSync('./data/groups.json', 'utf8'));
+const pathIssues = [];
+
+// Helper to find a match by winner reference
+function findMatchByWinnerRef(matches, winnerRef) {
+  return matches.find(m => m.teams.includes(winnerRef));
+}
+
+// Helper to find R32 match for a team designation
+function findR32Match(teamDesignation, finish) {
+  const r32Matches = matchesData.rounds.roundOf32.matches;
+  const group = teamDesignation.slice(1);
+  
+  if (finish === 1 || finish === 2) {
+    // Direct slot for 1st and 2nd place
+    return r32Matches.find(m => m.teams.includes(teamDesignation));
+  } else if (finish === 3) {
+    // Third place teams go into slots like "3ABCDF"
+    const matches = [];
+    for (const match of r32Matches) {
+      for (const teamStr of match.teams) {
+        if (teamStr.startsWith('3') && teamStr.length > 2) {
+          const possibleGroups = teamStr.slice(1).split('');
+          if (possibleGroups.includes(group)) {
+            matches.push(match);
+            break;
+          }
+        }
+      }
+    }
+    return matches.length > 0 ? matches : null;
+  }
+  return null;
+}
+
+// Trace the complete path from R32 to Final
+function tracePath(r32Match) {
+  const path = {
+    r32: r32Match,
+    r16: null,
+    quarter: null,
+    semi: null,
+    final: null
+  };
+  
+  // R32 -> R16
+  const r32WinnerRef = `W${r32Match.id.slice(1)}`;
+  path.r16 = findMatchByWinnerRef(matchesData.rounds.roundOf16.matches, r32WinnerRef);
+  
+  if (!path.r16) return path;
+  
+  // R16 -> Quarter
+  const r16WinnerRef = `W${path.r16.id.slice(1)}`;
+  path.quarter = findMatchByWinnerRef(matchesData.rounds.quarterFinals.matches, r16WinnerRef);
+  
+  if (!path.quarter) return path;
+  
+  // Quarter -> Semi
+  const quarterWinnerRef = `W${path.quarter.id.slice(1)}`;
+  path.semi = findMatchByWinnerRef(matchesData.rounds.semiFinals.matches, quarterWinnerRef);
+  
+  if (!path.semi) return path;
+  
+  // Semi -> Final (all semi winners go to final)
+  path.final = matchesData.rounds.final.matches[0];
+  
+  return path;
+}
+
+// Test each team for each placement
+const groups = Object.keys(groupsData.groups);
+const placements = [1, 2, 3];
+const placementLabels = { 1: '1st', 2: '2nd', 3: '3rd' };
+
+let testedCount = 0;
+let passedCount = 0;
+
+for (const group of groups) {
+  for (const finish of placements) {
+    const teamDesignation = `${finish}${group}`;
+    const teamData = groupsData.groups[group].teams.find(t => t.position === finish);
+    const teamName = teamData?.name || teamDesignation;
+    
+    testedCount++;
+    
+    // Find R32 match(es)
+    const r32Result = findR32Match(teamDesignation, finish);
+    
+    if (!r32Result) {
+      pathIssues.push({
+        team: teamName,
+        group,
+        placement: placementLabels[finish],
+        type: 'NO_R32_MATCH',
+        message: `No Round of 32 match found for ${teamName} (${teamDesignation}) finishing ${placementLabels[finish]}`
+      });
+      continue;
+    }
+    
+    // For 3rd place, multiple R32 slots are possible
+    const r32Matches = Array.isArray(r32Result) ? r32Result : [r32Result];
+    
+    let hasValidPath = false;
+    const pathErrors = [];
+    
+    for (const r32Match of r32Matches) {
+      const path = tracePath(r32Match);
+      
+      const missingSteps = [];
+      if (!path.r32) missingSteps.push('Round of 32');
+      if (!path.r16) missingSteps.push('Round of 16');
+      if (!path.quarter) missingSteps.push('Quarter-Final');
+      if (!path.semi) missingSteps.push('Semi-Final');
+      if (!path.final) missingSteps.push('Final');
+      
+      if (missingSteps.length === 0) {
+        hasValidPath = true;
+        break;
+      } else {
+        pathErrors.push({
+          r32Match: r32Match.id,
+          missing: missingSteps
+        });
+      }
+    }
+    
+    if (hasValidPath) {
+      passedCount++;
+    } else {
+      const errorDetails = pathErrors.map(e => 
+        `via ${e.r32Match}: missing ${e.missing.join(', ')}`
+      ).join('; ');
+      
+      pathIssues.push({
+        team: teamName,
+        group,
+        placement: placementLabels[finish],
+        type: 'INCOMPLETE_PATH',
+        message: `Incomplete path to final for ${teamName} (${teamDesignation}) finishing ${placementLabels[finish]}: ${errorDetails}`
+      });
+    }
+  }
+}
+
+// Print results
+if (pathIssues.length === 0) {
+  console.log('✅ All teams have complete paths to the final!');
+  console.log('');
+  console.log(`Tested: ${testedCount} team/placement combinations`);
+  console.log(`Passed: ${passedCount}`);
+  console.log('');
+  console.log('Verified for all 12 groups × 3 placements (36 combinations):');
+  console.log('  - Every team has at least one valid Round of 32 entry');
+  console.log('  - Every path traces through: R32 → R16 → QF → SF → Final');
+  console.log('  - No missing knockout round matches');
+} else {
+  console.log(`❌ Found ${pathIssues.length} path issues:\n`);
+  
+  for (const issue of pathIssues) {
+    console.log(`${issue.team} (Group ${issue.group}, ${issue.placement}): ${issue.type}`);
+    console.log(`  ${issue.message}`);
+    console.log('');
+  }
+}
+
+// ============================================================================
+// Final Summary
+// ============================================================================
 console.log('\n');
 console.log('='.repeat(80));
 console.log('Final Summary');
 console.log('='.repeat(80));
 console.log(`Schedule issues: ${issues.length}`);
 console.log(`Matchup rule issues: ${matchupIssues.length}`);
-console.log(`Total issues: ${issues.length + matchupIssues.length}`);
+console.log(`Path to final issues: ${pathIssues.length}`);
+console.log(`Total issues: ${issues.length + matchupIssues.length + pathIssues.length}`);
+
+// Exit with error code if any issues found
+if (issues.length + matchupIssues.length + pathIssues.length > 0) {
+  process.exit(1);
+}
