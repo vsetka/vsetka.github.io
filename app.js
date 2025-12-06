@@ -384,25 +384,9 @@ function getGroupStageMatches(group, position) {
   const allGroupMatches = matchesData.rounds.groupStage.matches;
   
   return matches.map(m => {
-    // Find paired match (same group, date, venues) for uncertain venue matches
-    let pairedMatchId = null;
-    if (m.venues.length > 1) {
-      const venuesKey = [...m.venues].sort().join(',');
-      const paired = allGroupMatches.find(other => 
-        other.id !== m.id &&
-        other.group === m.group &&
-        other.date === m.date &&
-        [...other.venues].sort().join(',') === venuesKey
-      );
-      if (paired) {
-        pairedMatchId = paired.id;
-      }
-    }
-    
     return {
       ...m,
-      venuesList: m.venues.map(v => matchesData.venues[v]),
-      pairedMatchId
+      venueData: matchesData.venues[m.venue]
     };
   });
 }
@@ -528,35 +512,13 @@ function createGroupMatchesSummary(matches) {
     const flag1 = countryFlags[team1English] || '🏳️';
     const flag2 = countryFlags[team2English] || '🏳️';
     
-    let matchIdDisplay = m.id;
-    let matchIdClass = 'match-id';
-    let venueDisplay;
-    let venueClass;
-    
-    if (m.pairedMatchId) {
-      // Sort match IDs numerically
-      const id1 = parseInt(m.id.slice(1));
-      const id2 = parseInt(m.pairedMatchId.slice(1));
-      const [firstId, secondId] = id1 < id2 ? [m.id, m.pairedMatchId] : [m.pairedMatchId, m.id];
-      matchIdDisplay = `${firstId}/${secondId}`;
-      matchIdClass = 'match-id uncertain';
-      
-      // Get venues from mapping in the same order as match IDs
-      const venue1 = matchesData.venues[matchIdToVenue[firstId]]?.name || matchIdToVenue[firstId];
-      const venue2 = matchesData.venues[matchIdToVenue[secondId]]?.name || matchIdToVenue[secondId];
-      venueDisplay = `${venue1} ${t('or')} ${venue2}`;
-      venueClass = 'venue uncertain';
-    } else {
-      // Single venue match
-      venueDisplay = m.venuesList[0]?.name || '';
-      venueClass = 'venue';
-    }
+    const venueDisplay = m.venueData?.name || '';
     
     return `
       <div class="group-match-item">
-        <span class="${matchIdClass}">${matchIdDisplay}</span>
+        <span class="match-id">${m.id}</span>
         <span class="match-teams">${flag1} ${team1} ${t('vs')} ${flag2} ${team2}</span>
-        <span class="${venueClass}">${venueDisplay}</span>
+        <span class="venue">${venueDisplay}</span>
         <span class="date">${formatDate(m.date)}</span>
       </div>
     `;
@@ -896,13 +858,11 @@ function calculateVenueOverlap() {
       // Collect venues from group stage (always same regardless of finish)
       if (finish === 1) { // Only add group matches once
         pathData.groupMatches.forEach(match => {
-          match.venues.forEach(venueKey => {
-            addTeamMatchToVenue(venueTeamMap, venueKey, team.name, {
-              matchId: match.pairedMatchId ? `${match.id}/${match.pairedMatchId}` : match.id,
-              round: t('groupStageMatches'),
-              date: match.date,
-              scenario: null
-            });
+          addTeamMatchToVenue(venueTeamMap, match.venue, team.name, {
+            matchId: match.id,
+            round: t('groupStageMatches'),
+            date: match.date,
+            scenario: null
           });
         });
       }
@@ -1403,43 +1363,13 @@ function renderVenueTimeline(venueName) {
 function getPossibleMatchupsForMatch(match, venueKey) {
   const matchups = [];
   
-  // For group stage matches
+  // For group stage matches - confirmed matchup
   if (match.roundKey === 'groupStage') {
-    // Check if this is a match with multiple possible venues
-    if (match.venues && match.venues.length > 1) {
-      // Find paired match (same group, same date, same venues)
-      const pairedMatch = matchesData.rounds.groupStage.matches.find(m => 
-        m.id !== match.id &&
-        m.group === match.group &&
-        m.date === match.date &&
-        m.venues && 
-        [...m.venues].sort().join(',') === [...match.venues].sort().join(',')
-      );
-      
-      // Both this match and paired match could happen at this venue
-      // Add this match's teams
-      matchups.push({
-        team1: formatTeamWithFlag(match.teams[0]),
-        team2: formatTeamWithFlag(match.teams[1]),
-        condition: ''
-      });
-      
-      // Add paired match's teams if exists
-      if (pairedMatch) {
-        matchups.push({
-          team1: formatTeamWithFlag(pairedMatch.teams[0]),
-          team2: formatTeamWithFlag(pairedMatch.teams[1]),
-          condition: ''
-        });
-      }
-    } else {
-      // Single venue - confirmed matchup
-      matchups.push({
-        team1: formatTeamWithFlag(match.teams[0]),
-        team2: formatTeamWithFlag(match.teams[1]),
-        condition: ''
-      });
-    }
+    matchups.push({
+      team1: formatTeamWithFlag(match.teams[0]),
+      team2: formatTeamWithFlag(match.teams[1]),
+      condition: ''
+    });
   } 
   // For knockout matches
   else {
