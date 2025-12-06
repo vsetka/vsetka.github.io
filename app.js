@@ -60,6 +60,12 @@ const countryFlags = {
   "Croatia": "🇭🇷",
   "Ghana": "🇬🇭",
   "Panama": "🇵🇦",
+  "Czechia/Denmark/North Macedonia/Republic of Ireland": "🏳️",
+  "Bosnia and Herzegovina/Italy/Northern Ireland/Wales": "🏳️",
+  "Kosovo/Romania/Slovakia/Türkiye": "🏳️",
+  "Albania/Poland/Sweden/Ukraine": "🏳️",
+  "Bolivia/Iraq/Suriname": "🏳️",
+  "Congo DR/Jamaica/New Caledonia": "🏳️",
   "TBD": "🏳️"
 };
 
@@ -564,7 +570,8 @@ function createPathCard(path, index, total, team) {
   
   const matches = [];
   
-  matches.push(createMatchCard(path.r32, t('roundOf32'), 'round-32', getOpponentInfo(path.r32, team)));
+  // matches.push(createMatchCard(path.r32, t('roundOf32'), 'round-32', getOpponentInfo(path.r32, team)));
+  matches.push(createMatchCard(path.r32, t('roundOf32'), 'round-32'));
   
   if (path.r16) {
     matches.push(createMatchCard(path.r16, t('roundOf16'), 'round-16'));

@@ -5,13 +5,13 @@
         { "position": 1, "name": "Mexico", "pot": 1 },
         { "position": 2, "name": "South Africa", "pot": 3 },
         { "position": 3, "name": "South Korea", "pot": 2 },
-        { "position": 4, "name": "TBD", "pot": 4 }
+        { "position": 4, "name": "Czechia/Denmark/North Macedonia/Republic of Ireland", "pot": 4 }
       ]
     },
     "B": {
       "teams": [
         { "position": 1, "name": "Canada", "pot": 1 },
-        { "position": 2, "name": "TBD", "pot": 4 },
+        { "position": 2, "name": "Bosnia and Herzegovina/Italy/Northern Ireland/Wales", "pot": 4 },
         { "position": 3, "name": "Qatar", "pot": 3 },
         { "position": 4, "name": "Switzerland", "pot": 2 }
       ]
@@ -29,7 +29,7 @@
         { "position": 1, "name": "USA", "pot": 1 },
         { "position": 2, "name": "Paraguay", "pot": 3 },
         { "position": 3, "name": "Australia", "pot": 2 },
-        { "position": 4, "name": "TBD", "pot": 4 }
+        { "position": 4, "name": "Kosovo/Romania/Slovakia/Türkiye", "pot": 4 }
       ]
     },
     "E": {
@@ -44,7 +44,7 @@
       "teams": [
         { "position": 1, "name": "Netherlands", "pot": 1 },
         { "position": 2, "name": "Japan", "pot": 2 },
-        { "position": 3, "name": "TBD", "pot": 4 },
+        { "position": 3, "name": "Albania/Poland/Sweden/Ukraine", "pot": 4 },
         { "position": 4, "name": "Tunisia", "pot": 3 }
       ]
     },
@@ -68,7 +68,7 @@
       "teams": [
         { "position": 1, "name": "France", "pot": 1 },
         { "position": 2, "name": "Senegal", "pot": 2 },
-        { "position": 3, "name": "TBD", "pot": 4 },
+        { "position": 3, "name": "Bolivia/Iraq/Suriname", "pot": 4 },
         { "position": 4, "name": "Norway", "pot": 3 }
       ]
     },
@@ -83,7 +83,7 @@
     "K": {
       "teams": [
         { "position": 1, "name": "Portugal", "pot": 1 },
-        { "position": 2, "name": "TBD", "pot": 4 },
+        { "position": 2, "name": "Congo DR/Jamaica/New Caledonia", "pot": 4 },
         { "position": 3, "name": "Uzbekistan", "pot": 3 },
         { "position": 4, "name": "Colombia", "pot": 2 }
       ]
