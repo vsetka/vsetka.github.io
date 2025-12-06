@@ -1186,13 +1186,23 @@ function populateVenueMatchFilter() {
 }
 
 function toggleVenueMatchFilter(matchId, chipEl) {
-  if (venueFilterMatches.has(matchId)) {
-    venueFilterMatches.delete(matchId);
-    chipEl.classList.remove('selected');
-  } else {
+  const isAdding = !venueFilterMatches.has(matchId);
+  
+  if (isAdding) {
     venueFilterMatches.add(matchId);
     chipEl.classList.add('selected');
+  } else {
+    venueFilterMatches.delete(matchId);
+    chipEl.classList.remove('selected');
   }
+  
+  // Track filter action
+  trackEvent('venue_filter_match', {
+    match_id: matchId,
+    action: isAdding ? 'add' : 'remove',
+    venue_name: matchesData.venues[currentVenueKey]?.name,
+    total_match_filters: venueFilterMatches.size
+  });
   
   // Re-render with filter
   const venueData = matchesData.venues[currentVenueKey];
@@ -1200,10 +1210,20 @@ function toggleVenueMatchFilter(matchId, chipEl) {
 }
 
 function clearVenueMatchFilter() {
+  const previousCount = venueFilterMatches.size;
   venueFilterMatches.clear();
   document.querySelectorAll('.match-chip.selected').forEach(chip => {
     chip.classList.remove('selected');
   });
+  
+  // Track clear action
+  if (previousCount > 0) {
+    trackEvent('venue_filter_clear', {
+      filter_type: 'matches',
+      venue_name: matchesData.venues[currentVenueKey]?.name,
+      cleared_count: previousCount
+    });
+  }
   
   const venueData = matchesData.venues[currentVenueKey];
   if (venueData) {
@@ -1265,13 +1285,23 @@ function extractTeamName(displayStr) {
 }
 
 function toggleVenueTeamFilter(teamName, chipEl) {
-  if (venueFilterTeams.has(teamName)) {
-    venueFilterTeams.delete(teamName);
-    chipEl.classList.remove('selected');
-  } else {
+  const isAdding = !venueFilterTeams.has(teamName);
+  
+  if (isAdding) {
     venueFilterTeams.add(teamName);
     chipEl.classList.add('selected');
+  } else {
+    venueFilterTeams.delete(teamName);
+    chipEl.classList.remove('selected');
   }
+  
+  // Track filter action
+  trackEvent('venue_filter_team', {
+    team_name: teamName,
+    action: isAdding ? 'add' : 'remove',
+    venue_name: matchesData.venues[currentVenueKey]?.name,
+    total_team_filters: venueFilterTeams.size
+  });
   
   // Re-render with filter
   const venueData = matchesData.venues[currentVenueKey];
@@ -1279,10 +1309,20 @@ function toggleVenueTeamFilter(teamName, chipEl) {
 }
 
 function clearVenueTeamFilter() {
+  const previousCount = venueFilterTeams.size;
   venueFilterTeams.clear();
   document.querySelectorAll('.team-chip.selected').forEach(chip => {
     chip.classList.remove('selected');
   });
+  
+  // Track clear action
+  if (previousCount > 0) {
+    trackEvent('venue_filter_clear', {
+      filter_type: 'teams',
+      venue_name: matchesData.venues[currentVenueKey]?.name,
+      cleared_count: previousCount
+    });
+  }
   
   const venueData = matchesData.venues[currentVenueKey];
   if (venueData) {
