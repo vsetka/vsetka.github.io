@@ -750,3 +750,417 @@ html[dir="rtl"] .match-venue::after {
   font-size: 0.75rem;
   color: var(--text-primary);
 }
+
+/* Mode Tabs */
+.mode-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+.mode-tab {
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-tab:hover {
+  border-color: var(--accent-gold);
+  color: var(--text-primary);
+}
+
+.mode-tab.active {
+  background: rgba(212, 168, 85, 0.15);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+/* Multi-Team Section */
+.multi-team-section {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.multi-team-section.hidden {
+  display: none;
+}
+
+.multi-team-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: var(--shadow);
+}
+
+.multi-team-card h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+/* Team Checkboxes Grid */
+.team-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.team-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-card);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 2px solid transparent;
+}
+
+.team-checkbox-item:hover {
+  background: var(--bg-hover);
+}
+
+.team-checkbox-item.selected {
+  border-color: var(--accent-gold);
+  background: rgba(212, 168, 85, 0.1);
+}
+
+.team-checkbox-item input[type="checkbox"] {
+  display: none;
+}
+
+.team-checkbox-item .checkbox-indicator {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.team-checkbox-item.selected .checkbox-indicator {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+}
+
+.team-checkbox-item.selected .checkbox-indicator::after {
+  content: '✓';
+  color: var(--bg-primary);
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.team-checkbox-item .team-flag {
+  font-size: 1.25rem;
+}
+
+.team-checkbox-item .team-name {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-checkbox-item .team-group-badge {
+  font-size: 0.65rem;
+  background: var(--bg-secondary);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+/* Selected Teams Summary */
+.selected-teams-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.selected-teams-summary #selected-count {
+  font-weight: 600;
+  color: var(--accent-gold);
+  font-size: 1.1rem;
+}
+
+/* Calculate Button */
+.calculate-btn {
+  width: 100%;
+  padding: 1rem 2rem;
+  background: var(--accent-gold);
+  border: none;
+  border-radius: 8px;
+  color: var(--bg-primary);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.calculate-btn:hover:not(:disabled) {
+  background: #e6b966;
+  transform: translateY(-2px);
+}
+
+.calculate-btn:disabled {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* Venue Results */
+.venue-results {
+  margin-top: 2rem;
+}
+
+.venue-results.hidden {
+  display: none;
+}
+
+.venue-results h2 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  letter-spacing: 1px;
+  color: var(--accent-gold);
+  margin-bottom: 0.5rem;
+}
+
+.results-hint {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.venue-results-container {
+  display: grid;
+  gap: 1rem;
+}
+
+.venue-result-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: grid;
+  gap: 1rem;
+  border-left: 4px solid var(--accent-gold);
+}
+
+.venue-result-card.rank-1 {
+  border-left-color: #ffd700;
+  background: linear-gradient(135deg, var(--bg-card), rgba(255, 215, 0, 0.05));
+}
+
+.venue-result-card.rank-2 {
+  border-left-color: #c0c0c0;
+}
+
+.venue-result-card.rank-3 {
+  border-left-color: #cd7f32;
+}
+
+.venue-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.venue-rank {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--accent-gold);
+  min-width: 50px;
+}
+
+.venue-result-card.rank-1 .venue-rank { color: #ffd700; }
+.venue-result-card.rank-2 .venue-rank { color: #c0c0c0; }
+.venue-result-card.rank-3 .venue-rank { color: #cd7f32; }
+
+.venue-name-large {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.venue-team-count {
+  background: var(--bg-secondary);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.venue-team-count .count {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  color: var(--accent-teal);
+}
+
+.venue-team-count .label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.venue-teams-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.venue-team-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.venue-team-badge .flag {
+  font-size: 1rem;
+}
+
+.venue-rounds-info {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.venue-rounds-info strong {
+  color: var(--text-secondary);
+}
+
+/* Team Match Details */
+.venue-team-details {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.venue-team-detail {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.venue-team-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.venue-team-header .flag {
+  font-size: 1.25rem;
+}
+
+.venue-team-header .team-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.venue-team-header .match-count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.venue-team-matches {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.team-match-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-card);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.match-id-small {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--accent-gold);
+  min-width: 50px;
+}
+
+.match-round-small {
+  color: var(--text-primary);
+  font-weight: 500;
+  flex: 1;
+  min-width: 80px;
+}
+
+.match-date-small {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.match-scenario {
+  font-size: 0.7rem;
+  color: var(--accent-teal);
+  background: rgba(69, 184, 172, 0.1);
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* Responsive for multi-team */
+@media (max-width: 768px) {
+  .mode-tabs {
+    flex-direction: column;
+  }
+  
+  .team-checkboxes {
+    grid-template-columns: 1fr;
+  }
+  
+  .venue-result-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -133,6 +133,7 @@ async function init() {
     updatePageTranslations();
     populateTeamSelector();
     setupEventListeners();
+    setupModeTabs();
   } catch (error) {
     console.error('Failed to load data:', error);
   }
@@ -693,6 +694,310 @@ function formatDate(dateStr) {
     || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   
   return `${months[monthIndex]} ${day}`;
+}
+
+// ============================================================================
+// Multi-Team Venue Finder
+// ============================================================================
+
+let selectedTeamsForOverlap = new Set();
+
+function setupModeTabs() {
+  const tabs = document.querySelectorAll('.mode-tab');
+  const singleMode = document.getElementById('single-team-mode');
+  const multiMode = document.getElementById('multi-team-mode');
+  const pathSection = document.getElementById('path-section');
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const mode = tab.dataset.mode;
+      
+      // Update active tab
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      // Show/hide sections
+      if (mode === 'single') {
+        singleMode.classList.remove('hidden');
+        multiMode.classList.add('hidden');
+      } else {
+        singleMode.classList.add('hidden');
+        pathSection.classList.add('hidden');
+        multiMode.classList.remove('hidden');
+        populateTeamCheckboxes();
+      }
+    });
+  });
+}
+
+function populateTeamCheckboxes() {
+  const container = document.getElementById('team-checkboxes');
+  if (!container || !groupsData) return;
+  
+  container.innerHTML = '';
+  
+  // Get all teams sorted by group
+  const allTeams = [];
+  Object.entries(groupsData.groups).forEach(([groupLetter, groupData]) => {
+    groupData.teams.forEach(team => {
+      if (team.name !== 'TBD' && !team.name.includes('playoff')) {
+        allTeams.push({
+          ...team,
+          group: groupLetter,
+          id: `${groupLetter}-${team.position}`
+        });
+      }
+    });
+  });
+  
+  allTeams.forEach(team => {
+    const item = document.createElement('label');
+    item.className = 'team-checkbox-item';
+    if (selectedTeamsForOverlap.has(team.id)) {
+      item.classList.add('selected');
+    }
+    
+    const translatedName = translateCountry(team.name);
+    const flag = countryFlags[team.name] || '🏳️';
+    
+    item.innerHTML = `
+      <input type="checkbox" value="${team.id}" ${selectedTeamsForOverlap.has(team.id) ? 'checked' : ''}>
+      <span class="checkbox-indicator"></span>
+      <span class="team-flag">${flag}</span>
+      <span class="team-name">${translatedName}</span>
+      <span class="team-group-badge">${t('group')} ${team.group}</span>
+    `;
+    
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      const checkbox = item.querySelector('input');
+      checkbox.checked = !checkbox.checked;
+      
+      if (checkbox.checked) {
+        selectedTeamsForOverlap.add(team.id);
+        item.classList.add('selected');
+      } else {
+        selectedTeamsForOverlap.delete(team.id);
+        item.classList.remove('selected');
+      }
+      
+      updateSelectedCount();
+    });
+    
+    container.appendChild(item);
+  });
+  
+  updateSelectedCount();
+  
+  // Setup calculate button
+  const calcBtn = document.getElementById('calculate-overlap-btn');
+  calcBtn.addEventListener('click', calculateVenueOverlap);
+}
+
+function updateSelectedCount() {
+  const countEl = document.getElementById('selected-count');
+  const calcBtn = document.getElementById('calculate-overlap-btn');
+  
+  countEl.textContent = selectedTeamsForOverlap.size;
+  calcBtn.disabled = selectedTeamsForOverlap.size < 2;
+}
+
+function calculateVenueOverlap() {
+  // venue -> { teams: Set, teamMatches: { teamName: [{ matchId, round, date, scenario }] } }
+  const venueTeamMap = {};
+  
+  // For each selected team, calculate all possible paths (1st, 2nd, 3rd place)
+  selectedTeamsForOverlap.forEach(teamId => {
+    const [group, position] = teamId.split('-');
+    const teamData = groupsData.groups[group].teams.find(t => t.position === parseInt(position));
+    
+    if (!teamData) return;
+    
+    const team = {
+      name: teamData.name,
+      group: group,
+      position: parseInt(position)
+    };
+    
+    // Calculate paths for each finish scenario (1st, 2nd, 3rd)
+    [1, 2, 3].forEach(finish => {
+      const finishLabel = finish === 1 ? t('first') : finish === 2 ? t('second') : t('third');
+      const pathData = calculatePaths(team, finish);
+      
+      // Collect venues from group stage (always same regardless of finish)
+      if (finish === 1) { // Only add group matches once
+        pathData.groupMatches.forEach(match => {
+          match.venues.forEach(venueKey => {
+            addTeamMatchToVenue(venueTeamMap, venueKey, team.name, {
+              matchId: match.pairedMatchId ? `${match.id}/${match.pairedMatchId}` : match.id,
+              round: t('groupStageMatches'),
+              date: match.date,
+              scenario: null
+            });
+          });
+        });
+      }
+      
+      // Collect venues from knockout paths
+      pathData.paths.forEach(path => {
+        if (path.r32?.venue) {
+          addTeamMatchToVenue(venueTeamMap, getVenueKey(path.r32.venue.name), team.name, {
+            matchId: path.r32.id,
+            round: t('roundOf32'),
+            date: path.r32.date,
+            scenario: finishLabel
+          });
+        }
+        if (path.r16?.venue) {
+          addTeamMatchToVenue(venueTeamMap, getVenueKey(path.r16.venue.name), team.name, {
+            matchId: path.r16.id,
+            round: t('roundOf16'),
+            date: path.r16.date,
+            scenario: finishLabel
+          });
+        }
+        if (path.quarter?.venue) {
+          addTeamMatchToVenue(venueTeamMap, getVenueKey(path.quarter.venue.name), team.name, {
+            matchId: path.quarter.id,
+            round: t('quarterFinal'),
+            date: path.quarter.date,
+            scenario: finishLabel
+          });
+        }
+        if (path.semi?.venue) {
+          addTeamMatchToVenue(venueTeamMap, getVenueKey(path.semi.venue.name), team.name, {
+            matchId: path.semi.id,
+            round: t('semiFinal'),
+            date: path.semi.date,
+            scenario: finishLabel
+          });
+        }
+        if (path.final?.venue) {
+          addTeamMatchToVenue(venueTeamMap, getVenueKey(path.final.venue.name), team.name, {
+            matchId: path.final.id,
+            round: t('final'),
+            date: path.final.date,
+            scenario: finishLabel
+          });
+        }
+      });
+    });
+  });
+  
+  // Convert to array and sort by team count
+  const venueResults = Object.entries(venueTeamMap)
+    .map(([venueKey, data]) => ({
+      venueKey,
+      venueName: matchesData.venues[venueKey]?.name || venueKey,
+      teams: Array.from(data.teams),
+      teamMatches: data.teamMatches,
+      teamCount: data.teams.size
+    }))
+    .filter(v => v.teamCount >= 2) // Only show venues with 2+ teams
+    .sort((a, b) => b.teamCount - a.teamCount);
+  
+  displayVenueResults(venueResults);
+}
+
+function addTeamMatchToVenue(map, venueKey, teamName, matchInfo) {
+  if (!map[venueKey]) {
+    map[venueKey] = { teams: new Set(), teamMatches: {} };
+  }
+  map[venueKey].teams.add(teamName);
+  
+  if (!map[venueKey].teamMatches[teamName]) {
+    map[venueKey].teamMatches[teamName] = [];
+  }
+  
+  // Avoid duplicate entries (same match ID and round)
+  const exists = map[venueKey].teamMatches[teamName].some(
+    m => m.matchId === matchInfo.matchId && m.round === matchInfo.round
+  );
+  if (!exists) {
+    map[venueKey].teamMatches[teamName].push(matchInfo);
+  }
+}
+
+function getVenueKey(venueName) {
+  // Find venue key by name
+  for (const [key, venue] of Object.entries(matchesData.venues)) {
+    if (venue.name === venueName) return key;
+  }
+  return venueName.toLowerCase().replace(/[^a-z]/g, '_');
+}
+
+function displayVenueResults(results) {
+  const resultsSection = document.getElementById('venue-results');
+  const container = document.getElementById('venue-results-container');
+  
+  if (results.length === 0) {
+    container.innerHTML = `
+      <div class="no-results">
+        <p>${t('noOverlapFound')}</p>
+      </div>
+    `;
+    resultsSection.classList.remove('hidden');
+    return;
+  }
+  
+  container.innerHTML = results.map((venue, index) => {
+    const rank = index + 1;
+    const rankClass = rank <= 3 ? `rank-${rank}` : '';
+    
+    // Build detailed team match breakdown
+    const teamDetailsHtml = venue.teams.map(teamName => {
+      const flag = countryFlags[teamName] || '🏳️';
+      const translatedName = translateCountry(teamName);
+      const matches = venue.teamMatches[teamName] || [];
+      
+      // Sort matches by date
+      matches.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      
+      const matchListHtml = matches.map(m => {
+        const scenarioText = m.scenario ? `<span class="match-scenario">${t('if')} ${m.scenario}</span>` : '';
+        return `
+          <div class="team-match-item">
+            <span class="match-id-small">${m.matchId}</span>
+            <span class="match-round-small">${m.round}</span>
+            <span class="match-date-small">${m.date ? formatDate(m.date) : ''}</span>
+            ${scenarioText}
+          </div>
+        `;
+      }).join('');
+      
+      return `
+        <div class="venue-team-detail">
+          <div class="venue-team-header">
+            <span class="flag">${flag}</span>
+            <span class="team-name">${translatedName}</span>
+            <span class="match-count">${matches.length} ${t('potentialMatches')}</span>
+          </div>
+          <div class="venue-team-matches">
+            ${matchListHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    return `
+      <div class="venue-result-card ${rankClass}">
+        <div class="venue-result-header">
+          <span class="venue-rank">#${rank}</span>
+          <span class="venue-name-large">${venue.venueName}</span>
+          <div class="venue-team-count">
+            <div class="count">${venue.teamCount}</div>
+            <div class="label">${t('teams')}</div>
+          </div>
+        </div>
+        <div class="venue-team-details">
+          ${teamDetailsHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  resultsSection.classList.remove('hidden');
+  resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 document.addEventListener('DOMContentLoaded', init);

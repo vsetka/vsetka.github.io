@@ -41,7 +41,14 @@
     </header>
 
     <main class="main">
-      <section class="selector-section">
+      <!-- Mode Tabs -->
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="single" data-i18n="singleTeamMode">Single Team Path</button>
+        <button class="mode-tab" data-mode="multi" data-i18n="multiTeamMode">Multi-Team Venue Finder</button>
+      </div>
+
+      <!-- Single Team Mode -->
+      <section class="selector-section" id="single-team-mode">
         <div class="selector-card">
           <h2 data-i18n="selectTeam">Select a Team</h2>
           <p class="selector-hint" data-i18n="selectTeamHint">Choose your team to see their potential path to the final</p>
@@ -94,6 +101,36 @@
         
         <div class="paths-container" id="paths-container">
           <!-- Paths will be dynamically generated -->
+        </div>
+      </section>
+
+      <!-- Multi-Team Mode -->
+      <section class="multi-team-section hidden" id="multi-team-mode">
+        <div class="multi-team-card">
+          <h2 data-i18n="selectYourTeams">Select Your Teams</h2>
+          <p class="selector-hint" data-i18n="multiTeamHint">Choose teams you support to find venues where their paths overlap</p>
+          
+          <div class="team-checkboxes" id="team-checkboxes">
+            <!-- Team checkboxes will be populated by JS -->
+          </div>
+          
+          <div class="selected-teams-summary" id="selected-teams-summary">
+            <span data-i18n="teamsSelected">Teams selected:</span>
+            <span id="selected-count">0</span>
+          </div>
+          
+          <button class="calculate-btn" id="calculate-overlap-btn" disabled data-i18n="calculateOverlap">
+            Find Best Venues
+          </button>
+        </div>
+        
+        <div class="venue-results hidden" id="venue-results">
+          <h2 data-i18n="venueOverlapResults">Best Venues for Your Teams</h2>
+          <p class="results-hint" data-i18n="venueResultsHint">Venues ranked by how many of your teams could potentially play there</p>
+          
+          <div class="venue-results-container" id="venue-results-container">
+            <!-- Results will be dynamically generated -->
+          </div>
         </div>
       </section>
     </main>
